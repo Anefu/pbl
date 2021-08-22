@@ -3,7 +3,7 @@ resource "aws_efs_file_system" "efs" {
     Name = "efs"
   }
   encrypted = true
-  kms_key_id = aws_kms_key.kms.key_id
+  kms_key_id = aws_kms_key.kms.arn
 }
 
 resource "aws_efs_mount_target" "mounta" {

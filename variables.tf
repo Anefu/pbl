@@ -35,13 +35,13 @@ variable "environment" {
 }
 
 variable "bastion_ami" {
-  default = "ami-0db9a12ec65f80ea2"
+  default = "ami-0b0af3577fe5e3532"
 }
 
 variable "webserver_ami" {
-  default = "ami-058342c1a35b2c70c"
+  default = "ami-0b0af3577fe5e3532"
 }
 
 variable "account_no" {
-  default = 087196791418
+  default = "224134489861"
 }

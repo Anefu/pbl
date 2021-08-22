@@ -5,7 +5,7 @@ resource "aws_security_group" "alb-sg" {
     cidr_blocks = [ "0.0.0.0/0" ]
     description = "ALB security group"
     from_port = 80
-    protocol = "HTTP"
+    protocol = "tcp"
     to_port = 80
     self = false
   }
@@ -13,7 +13,7 @@ resource "aws_security_group" "alb-sg" {
     cidr_blocks = [ "0.0.0.0/0" ]
     description = "ALB security group"
     from_port = 443
-    protocol = "HTTPS"
+    protocol = "tcp"
     to_port = 443
     self = false
   }
@@ -35,13 +35,13 @@ resource "aws_security_group" "nginx-sg" {
   ingress {
     from_port = 80
     to_port = 80
-    protocol = "HTTP"
+    protocol = "tcp"
     security_groups = [aws_security_group.alb-sg.id]
   }
   ingress {
     from_port = 443
     to_port = 443
-    protocol = "HTTPS"
+    protocol = "tcp"
     security_groups = [aws_security_group.alb-sg.id]
   }
   ingress {
@@ -56,7 +56,7 @@ resource "aws_security_group" "nginx-sg" {
   }
 }
 resource "aws_security_group" "bastion_sg" {
-    name = "vpc_web_sg"
+    name = "bastion_sg"
     description = "Allow incoming SSH connections."
 
     ingress {
@@ -83,18 +83,18 @@ resource "aws_security_group" "bastion_sg" {
 }
 
 resource "aws_security_group" "web_sg" {
-  name   = "nginx-sg"
+  name   = "web-sg"
   vpc_id = aws_vpc.main.id
   ingress {
     from_port = 80
     to_port = 80
-    protocol = "HTTP"
+    protocol = "tcp"
     security_groups = [aws_security_group.nginx-sg.id]
   }
   ingress {
     from_port = 443
     to_port = 443
-    protocol = "HTTPS"
+    protocol = "tcp"
     security_groups = [aws_security_group.nginx-sg.id]
   }
   tags = {
