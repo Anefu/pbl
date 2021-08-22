@@ -45,3 +45,15 @@ variable "webserver_ami" {
 variable "account_no" {
   default = "224134489861"
 }
+
+variable "images" {
+    type = map
+    default = {
+        "us-east-1" = "ami-0b0af3577fe5e3532",
+        "us-west-1" = "ami-054965c6cd7c6e462"
+    }
+}
+
+variable "create_read_replica" {
+  default = false
+}

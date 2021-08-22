@@ -1,28 +1,31 @@
+locals {
+  http_ingress_rules = [{
+    port = 443
+    protocol = "tcp"
+  },
+  {
+    port = 80
+    protocol = "tcp"
+  }
+  ]
+  ssh_ingress_rules = [{
+    port = 22
+    protocol = "tcp"
+  }
+  ]
+}
 resource "aws_security_group" "alb-sg" {
   name   = "alb-sg"
   vpc_id = aws_vpc.main.id
-  ingress {
-    cidr_blocks = [ "0.0.0.0/0" ]
-    description = "ALB security group"
-    from_port = 80
-    protocol = "tcp"
-    to_port = 80
-    self = false
-  }
-  ingress {
-    cidr_blocks = [ "0.0.0.0/0" ]
-    description = "ALB security group"
-    from_port = 443
-    protocol = "tcp"
-    to_port = 443
-    self = false
-  }
-  egress {
-    cidr_blocks = [ "0.0.0.0/0" ]
-    from_port = 0
-    protocol = "-1"
-    to_port = 0
-    self = false
+  dynamic "ingress" {
+    for_each = local.http_ingress_rules
+
+    content {
+      from_port = ingress.value.port
+      to_port = ingress.value.port
+      protocol = ingress.value.protocol
+      cidr_blocks = ["0.0.0.0/0"]
+    }
   }
   tags = {
       Name = "ALB-SG"
@@ -32,17 +35,15 @@ resource "aws_security_group" "alb-sg" {
 resource "aws_security_group" "nginx-sg" {
   name   = "nginx-sg"
   vpc_id = aws_vpc.main.id
-  ingress {
-    from_port = 80
-    to_port = 80
-    protocol = "tcp"
-    security_groups = [aws_security_group.alb-sg.id]
-  }
-  ingress {
-    from_port = 443
-    to_port = 443
-    protocol = "tcp"
-    security_groups = [aws_security_group.alb-sg.id]
+  dynamic "ingress" {
+    for_each = local.http_ingress_rules
+
+    content {
+      from_port = ingress.value.port
+      to_port = ingress.value.port
+      protocol = ingress.value.protocol
+      security_groups = [aws_security_group.alb-sg.id]
+    }
   }
   ingress {
     from_port = 22
@@ -59,19 +60,15 @@ resource "aws_security_group" "bastion_sg" {
     name = "bastion_sg"
     description = "Allow incoming SSH connections."
 
-    ingress {
-        description = "SSH"
-        from_port   = 22
-        to_port     = 22
-        protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
+    dynamic "ingress" {
+      for_each = local.ssh_ingress_rules
 
-    egress {
-        from_port   = 0
-        to_port     = 0
-        protocol    = "-1"
+      content {
+        from_port = ingress.value.port
+        to_port = ingress.value.port
+        protocol = ingress.value.protocol
         cidr_blocks = ["0.0.0.0/0"]
+      }
     }
 
     vpc_id = aws_vpc.main.id
@@ -85,17 +82,15 @@ resource "aws_security_group" "bastion_sg" {
 resource "aws_security_group" "web_sg" {
   name   = "web-sg"
   vpc_id = aws_vpc.main.id
-  ingress {
-    from_port = 80
-    to_port = 80
-    protocol = "tcp"
-    security_groups = [aws_security_group.nginx-sg.id]
-  }
-  ingress {
-    from_port = 443
-    to_port = 443
-    protocol = "tcp"
-    security_groups = [aws_security_group.nginx-sg.id]
+  dynamic "ingress" {
+    for_each = local.http_ingress_rules
+
+    content {
+      from_port = ingress.value.port
+      to_port = ingress.value.port
+      protocol = ingress.value.protocol
+      security_groups = [aws_security_group.nginx-sg.id]
+    }
   }
   tags = {
     Name = "Webserver-SG"

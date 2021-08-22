@@ -1,7 +1,7 @@
 resource "aws_instance" "bastion" {
     count  = var.preferred_number_of_public_subnets == null ? length(data.aws_availability_zones.available.names) : var.preferred_number_of_public_subnets   
     key_name      = aws_key_pair.praise.key_name
-    ami           = var.bastion_ami
+    ami  = "${lookup(var.images, var.region, "ami-054965c6cd7c6e462")}"
     instance_type = "t2.micro"
     vpc_security_group_ids = [
         aws_security_group.bastion_sg.id
