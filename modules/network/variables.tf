@@ -1,8 +1,9 @@
 variable "region" {
-    default = "eu-central-1"
+    default = "us-east-1"
 }
 
 variable "vpc_cidr" {
+    type = string
     default = "172.16.0.0/16"
 }
 
@@ -42,10 +43,6 @@ variable "webserver_ami" {
   default = "ami-0b0af3577fe5e3532"
 }
 
-variable "account_no" {
-  default = "224134489861"
-}
-
 variable "images" {
     type = map
     default = {
@@ -54,6 +51,26 @@ variable "images" {
     }
 }
 
-variable "create_read_replica" {
-  default = false
+variable "vpc_tags" {
+  type = map
+}
+
+variable "public_subnet_tags" {
+  type = map
+}
+
+variable "private_subnet_tags" {
+  type = map
+}
+
+variable "nat_eip_tags" {
+  type = map
+}
+
+variable "nat_tags" {
+  type = map
+}
+
+variable "ig_tags" {
+  type = map
 }

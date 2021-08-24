@@ -1,68 +1,72 @@
 provider "aws" {
-region = "us-east-1"
+  region = "us-east-1"
 }
-
-# Use S3 as backend instead of local
-#terraform {
-#  backend "s3" {
-#    bucket         = "pbl-tf-backend"
-#    key            = "global/s3/terraform.tfstate"
-#    region         = "eu-central-1"
-#    dynamodb_table = "terraform-locks"
-#    encrypt        = true
-#  }
-#}
-
-locals {
-  default_tags = {
-    Description = "Created by Terraform"
+module "network" {
+  source = "./modules/network"
+  vpc_tags = {
+      Name = "Terraform VPC"
+  }
+  public_subnet_tags = {
+      Name = "Public subnet"
+  }
+  private_subnet_tags = {
+      Name = "Private subnet tags"
+  }
+  nat_eip_tags = {
+      Name = "Nat EIP"
+  }
+  nat_tags = {
+      Name = "NAT"
+  }
+  ig_tags = {
+      Name = "IG"
   }
 }
-# Create VPC
-resource "aws_vpc" "main" {
-  cidr_block                     = "172.16.0.0/16"
-  enable_dns_support             = "true"
-  enable_dns_hostnames           = "true"
-  enable_classiclink             = "false"
-  enable_classiclink_dns_support = "false"
-  tags = merge(
-    local.default_tags,
-    {
-      Name = "Terraform VPC"
-    } 
-  )
+
+module "alb" {
+  source = "./modules/alb"
+  vpc_id = module.network.vpc_id
+  alb_security_group = ["${module.network.alb-sg}"]
+  alb_subnet_ids = [module.network.public-subnets[0], module.network.public-subnets[1]]
+  nginx_alb_tags = {
+      Name = "Nginx ALB"
+  }
+  wordpress_alb_tags = {
+      Name = "Wordpress ALB"
+  }
+  tooling_alb_tags = {
+      Name = "Tooling ALB"
+  }
 }
 
-# Get list of availability zones
-data "aws_availability_zones" "available" {
-    state = "available"
+module "asg" {
+  source = "./modules/autoscaling"
+  bastion_sg = [module.network.bastion_sg]
+  bastion_subnets = [module.network.public-subnets[0],module.network.public-subnets[1]]
+  bastion_tg_arn  = [module.alb.bastion-tg-arn]
 }
 
- # Create public subnet1
-resource "aws_subnet" "public" { 
-    count                   = var.preferred_number_of_public_subnets == null ? length(data.aws_availability_zones.available.names) : var.preferred_number_of_public_subnets
-    vpc_id                  = aws_vpc.main.id
-    cidr_block              = cidrsubnet(var.vpc_cidr, 4 , count.index)
-    map_public_ip_on_launch = true
-    availability_zone       = data.aws_availability_zones.available.names[count.index]
-    tags = merge(
-      local.default_tags,
-      {
-      Name = format("PublicSubnet-%s", count.index)
-      } 
-    )
+module "efs" {
+  source = "./modules/efs"
+  efs_tags = {
+      Name = "EFS"
+  }
+  efs_subnet_id = module.network.efs_subnets
+  efs_sg = [module.network.efs_sg]
 }
 
-resource "aws_subnet" "private" { 
-    count                   = var.preferred_number_of_private_subnets == null ? length(data.aws_availability_zones.available.names) : var.preferred_number_of_private_subnets
-    vpc_id                  = aws_vpc.main.id
-    cidr_block              = cidrsubnet(var.vpc_cidr, 4 , count.index+2)
-    map_public_ip_on_launch = false
-    availability_zone       = data.aws_availability_zones.available.names[count.index]
-    tags = merge(
-      local.default_tags,
-      {
-        Name = format("PrivateSubnet-%s", count.index)
-      } 
-    )
+module "rds" {
+  source = "./modules/rds"
+  rds_subnets = [module.network.private-subnets[2],module.network.private-subnets[3]]
+  rds_tags = {
+      Name = "MySQL RDS"
+  }
+  db_name = "tooling"
+  db_username = "webaccess"
+  db_password = "admin"
+
+}
+
+module "security" {
+  source = "./modules/security"
 }
