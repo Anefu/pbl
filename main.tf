@@ -39,6 +39,11 @@ module "alb" {
   }
 }
 
+module "compute" {
+  source = "./modules/compute"
+  security_groups = [module.network.bastion_sg]
+  subnet_id = module.network.public-subnets[0]
+}
 module "asg" {
   source = "./modules/autoscaling"
   bastion_sg = [module.network.bastion_sg]
@@ -63,7 +68,7 @@ module "rds" {
   }
   db_name = "tooling"
   db_username = "webaccess"
-  db_password = "admin"
+  db_password = "admin1234"
 
 }
 
