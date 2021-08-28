@@ -39,11 +39,11 @@ module "alb" {
   }
 }
 
-module "compute" {
-  source = "./modules/compute"
-  security_groups = [module.network.bastion_sg]
-  subnet_id = module.network.public-subnets[0]
-}
+# module "compute" {
+#   source = "./modules/compute"
+#   security_groups = [module.network.bastion_sg]
+#   subnet_id = module.network.public-subnets[0]
+# }
 module "asg" {
   source = "./modules/autoscaling"
   bastion_sg = [module.network.bastion_sg]
